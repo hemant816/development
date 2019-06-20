@@ -23,7 +23,8 @@ from student.models import (
     RegistrationCookieConfiguration,
     UserAttribute,
     UserProfile,
-    UserTestGroup
+    UserTestGroup,
+    LoginFailures
 )
 from student.roles import REGISTERED_ACCESS_ROLES
 from xmodule.modulestore.django import modulestore
@@ -260,6 +261,14 @@ class CourseEnrollmentAllowedAdmin(admin.ModelAdmin):
     class Meta(object):
         model = CourseEnrollmentAllowed
 
+@admin.register(LoginFailures)
+class LoginFailuresAdmin(admin.ModelAdmin):
+    """ Admin interface for the CourseEnrollmentAllowed model. """
+    list_display = ('user', 'failure_count', 'lockout_until',)
+    search_fields = ('user', 'failure_count', 'lockout_until',)
+
+    class Meta(object):
+        model = LoginFailures
 
 admin.site.register(UserTestGroup)
 admin.site.register(Registration)

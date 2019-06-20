@@ -20,7 +20,8 @@ from student.models import CourseEnrollment
 from util.milestones_helpers import get_course_content_milestones
 from xmodule.modulestore.django import modulestore
 from ..utils import get_course_outline_block_tree, get_resume_block
-
+from django.db.models import F
+from lms.djangoapps.add_manager.models import user_view_counter
 
 DEFAULT_COMPLETION_TRACKING_START = datetime.datetime(2018, 1, 24, tzinfo=UTC)
 
@@ -58,6 +59,20 @@ class CourseOutlineFragmentView(EdxFragmentView):
 
         context['gated_content'] = gated_content
         context['xblock_display_names'] = xblock_display_names
+
+        user = request.user
+        if request.is_ajax():
+            if request.method == 'GET' :
+                if user.is_authenticated():
+                    usr = request.user.id
+                    cid = request.GET.get('cid')
+                    view_counter = user_view_counter.objects.filter(course_id=cid,user=usr)
+                    if view_counter :
+                        update_counter = user_view_counter.objects.filter(course_id=cid,user=usr).update(counter = F('counter')+1)                                        
+                        
+                    else:
+                        countr = user_view_counter(user_id=usr, course_id=cid,counter=1)
+                        countr.save()
 
         html = render_to_string('course_experience/course-outline-fragment.html', context)
         return Fragment(html)

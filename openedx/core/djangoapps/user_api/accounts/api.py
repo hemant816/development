@@ -2,6 +2,7 @@
 """
 Programmatic integration point for User API Accounts sub-application
 """
+import logging
 import datetime
 from pytz import UTC
 
@@ -35,6 +36,8 @@ from .serializers import (
     AccountLegacyProfileSerializer, AccountUserSerializer,
     UserReadOnlySerializer, _visible_fields  # pylint: disable=invalid-name
 )
+
+log = logging.getLogger("edx.user_api")
 
 # Public access point for this function.
 visible_fields = _visible_fields
@@ -426,7 +429,7 @@ def request_password_change(email, is_secure):
     # Binding data to a form requires that the data be passed as a dictionary
     # to the Form class constructor.
     form = forms.PasswordResetFormNoActive({'email': email})
-
+    
     # Validate that a user exists with the given email address.
     if form.is_valid():
         # Generate a single-use link for performing a password reset

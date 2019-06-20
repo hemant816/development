@@ -1,6 +1,7 @@
 """
 Utility functions for validating forms
 """
+import logging
 import re
 from importlib import import_module
 
@@ -29,6 +30,7 @@ from student.message_types import PasswordReset
 from student.models import CourseEnrollmentAllowed, email_exists_or_retired
 from util.password_policy_validators import password_max_length, password_min_length, validate_password
 
+log = logging.getLogger("edx.student")
 
 class PasswordResetFormNoActive(PasswordResetForm):
     error_messages = {
@@ -80,7 +82,6 @@ class PasswordResetFormNoActive(PasswordResetForm):
                     }),
                 )
             })
-
             msg = PasswordReset().personalize(
                 recipient=Recipient(user.username, user.email),
                 language=get_user_preference(user, LANGUAGE_KEY),

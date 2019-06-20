@@ -4,6 +4,9 @@ Serializers for Course Blocks related return objects.
 from django.conf import settings
 from rest_framework import serializers
 from rest_framework.reverse import reverse
+from opaque_keys import InvalidKeyError
+from opaque_keys.edx.keys import UsageKey, CourseKey
+from xmodule.modulestore.django import modulestore
 
 from .transformers import SUPPORTED_FIELDS
 
@@ -75,7 +78,24 @@ class BlockSerializer(serializers.Serializer):  # pylint: disable=abstract-metho
             if children:
                 data['children'] = [unicode(child) for child in children]
 
+        if data.get('type', '') == 'pdf':
+            data['pdf_web_url'] = self.get_pdf_web_url(data)
+
         return data
+
+    def get_pdf_web_url(self, data):
+        block_id = data.get('id')
+        try:
+            location = UsageKey.from_string(block_id)
+        except InvalidKeyError:
+            return None
+        store = modulestore()
+        item = store.get_item(location)
+        pdf_url = getattr(item, 'url', None)
+        # pdf_url = getattr(item, 'href', None)
+        if pdf_url.startswith('/asset'):
+            pdf_url = settings.LMS_ROOT_URL + pdf_url
+        return pdf_url
 
 
 class BlockDictSerializer(serializers.Serializer):  # pylint: disable=abstract-method

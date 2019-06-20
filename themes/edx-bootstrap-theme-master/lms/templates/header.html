@@ -1,0 +1,18 @@
+## mako
+<%page expression_filter="h" args="online_help_token, use_cookie_banner=False"/>
+<%namespace name='static' file='static_content.html'/>
+<%include file="${static.get_template_path(relative_path='theme-header.html', default_path='theme-header.html')}"  args="online_help_token=online_help_token"  />
+
+<header class="${'slim' if course else ''}" >
+    % if use_cookie_banner:
+        ${static.renderReact(
+            component="CookiePolicyBanner",
+            id="cookie-policy-banner",
+            props={}
+        )}
+    % endif
+</header>
+
+% if settings.FEATURES.get('ENABLE_COOKIE_CONSENT', False):
+  <%include file="widgets/cookie-consent.html" />
+% endif

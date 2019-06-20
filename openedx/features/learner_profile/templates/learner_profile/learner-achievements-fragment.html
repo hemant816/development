@@ -7,6 +7,7 @@
 <%!
 from django.utils.translation import ugettext as _
 from openedx.core.djangolib.markup import HTML, Text
+from organizations.models import Organization
 %>
 
 <div class="learner-achievements">
@@ -35,19 +36,22 @@ from openedx.core.djangolib.markup import HTML, Text
                 )
                 %>
                 % if certificate_url:
+                    <%
+                        data = Organization.objects.get(short_name=course.display_org_with_default)
+                    %>
                     <a href="${certificate_url}" target="_blank">
                         <div class="card certificate-card mode-${certificate['type']}">
-                            <div class="card-logo">
-                                <h4 class="sr-only">
-                                    ${_('{course_mode} certificate').format(
-                                        course_mode=certificate['type'],
-                                    )}
-                                </h4>
+                            <div class="card-logo" style="width: 150px; padding: 8px; margin-top: 10px;">
+                                
+                                    <img src="https://s3-ap-southeast-1.amazonaws.com/docmode.co/site-imgs/Certificate-Vector.png"/>
+                                
                             </div>
                             <div class="card-content">
-                                <div class="card-supertitle">${course.display_org_with_default}</div>
+                            	<h4 style="color:#c13894;">Click here to view certificate</h4>
+                                <div class="card-supertitle">${data.name}</div>
+                                
                                 <div class="card-title">${course.display_name_with_default}</div>
-                                <p class="card-text">${completion_date_message_html}</p>
+                                <p class="card-text" style="min-height:auto;padding: 0px;">Course ${completion_date_message_html}</p>
                             </div>
                         </div>
                     </a>
@@ -63,7 +67,7 @@ from openedx.core.djangolib.markup import HTML, Text
                         <div class="card-content">
                             <div class="card-supertitle">${course.display_org_with_default}</div>
                             <div class="card-title">${course.display_name_with_default}</div>
-                            <p class="card-text">${completion_date_message_html}</p>
+                            <p class="card-text" style="min-height:auto;">${completion_date_message_html}</p>
                         </div>
                     </div>
                 % endif
