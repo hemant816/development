@@ -42,8 +42,9 @@ class CourseSearchView(DeveloperErrorViewMixin, APIView):
             page = 0
 
         course_category = request.GET.get('subjects')
+        org = request.GET.get('org')
 
-        if course_category:
+        if course_category or org:
             logging.info("Discovery category search request")
 
             def _process_field_values(request):
@@ -177,81 +178,54 @@ class CourseCategoryView(DeveloperErrorViewMixin, APIView):
         search_key = request.GET.get('search_key')
         user_id = request.GET.get('user_id')
         size = 200
-        search_url = request.build_absolute_uri(reverse('course_discovery'))
+        search_url = request.build_absolute_uri(reverse('subjects'))
 
-        if search_key:
-            def _process_field_values(request):
-                """ Create separate dictionary of supported filter values provided """
-                return {
-                    field_key: request.POST[field_key]
-                    for field_key in request.POST
-                    if field_key in course_discovery_filter_fields()
-                }
+        def _process_field_values(request):
+            """ Create separate dictionary of supported filter values provided """
+            return {
+                field_key: request.GET[field_key]
+                for field_key in request.GET
+                if field_key in course_discovery_filter_fields()
+            }
 
-            field_dictionary = _process_field_values(request)
+        field_dictionary = _process_field_values(request)
 
-            results = course_discovery_search(
-                search_term=search_key,
-                size=200,
-                from_=0,
-                field_dictionary=field_dictionary,
-            )
-            if results.get('total'):
-                category_lists = results.get('facets').get(
-                    'subjects').get('terms').keys()
-                if category_lists:
-                    course_category_list = []
-                    for category in category_lists:
-                        category_dict = {}
-                        category_obj = categories.objects.filter(
-                            topic_name=category)
-                        if category_obj.exists():
-                            category_obj = category_obj[0]
-                            category_dict['id'] = category_obj.id
-                            category_dict['name'] = category_obj.topic_name
-                            course_category_list.append(category_dict)
-                    if course_category_list:
-                        return JsonResponse({'success': True, 'categories_list': course_category_list})
-                    else:
-                        category_list = []
-                        category_obj = categories.objects.all()
-                        for category_obj in category_obj:
-                            category_dict = {}
-                            category_dict['id'] = category_obj.id
-                            category_dict['name'] = category_obj.topic_name
-
-                            category_list.append(category_dict)
-                        return JsonResponse({'success': True, 'categories_list': category_list})
-                else:
-                    category_list = []
-                    category_obj = categories.objects.all()
-                    for category_obj in category_obj:
-                        category_dict = {}
-                        category_dict['id'] = category_obj.id
-                        category_dict['name'] = category_obj.topic_name
-                    category_list.append(category_dict)
-                    return JsonResponse({'success': True, 'categories_list': category_list})
-
-            else:
-                category_list = []
-                category_obj = categories.objects.all()
-                for category_obj in category_obj:
-                    category_dict = {}
-                    category_dict['id'] = category_obj.id
-                    category_dict['name'] = category_obj.topic_name
-
-                    category_list.append(category_dict)
-                return JsonResponse({'success': True, 'categories_list': category_list})
+        results = course_discovery_search(
+            search_term=search_key,
+            size=200,
+            from_=0,
+            field_dictionary=field_dictionary,
+        )
+        associations_list = results['facets']['org']['terms']
+        topics_list = results['facets']['subjects']['terms']                
+        association_list =  []
+        if associations_list:
+            for name,count in associations_list.items():
+                association_dict = {}
+                association_dict['name'] = name
+                association_dict['count'] = count
+                association_list.append(association_dict)
         else:
-            category_list = []
-            category_obj = categories.objects.all()
-            for category_obj in category_obj:
-                category_dict = {}
-                category_dict['id'] = category_obj.id
-                category_dict['name'] = category_obj.topic_name
-
-                category_list.append(category_dict)
-            return JsonResponse({'success': True, 'categories_list': category_list})
+            association_list = []
+        topic_list = []
+        if topics_list:
+            for name ,count in topics_list.items():
+                topic_dict = {}
+                topic_dict['name'] = name
+                topic_dict['count'] = count
+                topic_list.append(topic_dict)
+        else:
+             topic_list = []
+        association_topic_list = []
+        association_topic_dict = {}
+        association_topic_dict['name'] = "Association"
+        association_topic_dict['value'] = association_list
+        association_topic_list.append(association_topic_dict)
+        association_topic_dict = {}
+        association_topic_dict['name'] = "Topics"
+        association_topic_dict['value'] = topic_list
+        association_topic_list.append(association_topic_dict)
+        return JsonResponse(association_topic_list,status=200, safe=False)
 
 
 @view_auth_classes(is_authenticated=False)
@@ -265,10 +239,11 @@ class CourseSearchEnrollmentView(DeveloperErrorViewMixin, APIView):
         params = request.GET
         search_key = request.GET.get('search_key')
         course_category = request.GET.get('subjects')
+        org = request.GET.get('org')
         user_id = request.GET.get('user_id')
         size = 2000
         search_url = request.build_absolute_uri(reverse('course_discovery'))
-        if course_category:
+        if course_category or org:
             def _process_field_values(request):
                 """ Create separate dictionary of supported filter values provided """
                 return {
